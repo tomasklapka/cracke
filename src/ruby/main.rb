@@ -4,31 +4,36 @@ puts "-------------------"
 
 require 'dma'
 
-=begin
-
-def format_results r
-  unless r.nil?
-    if r.kind_of?(Array)
-      r.each do |m|
-        puts "0x%08x" % m
-      end
-    else
-      puts "0x%08x" % r
-    end
-  end
-end
-=end
-
-$i=0
+load 'helpers.rb'
+load 'scanner.rb'
 
 def main
-
-    $i+=1
-    p $i
-
+  $counter = 0 unless $counter
+  $counter += 1
   $dma = Dma.new unless $dma
-  p $dma.data
-#  format_results 
-#  p $dma.read_uint(0x7fff8de9c350)
+  $scanner = Scanner.new($dma.ranges, lambda do |a| 
+    $dma.read_uint(a)
+  end) unless $scanner
 
+  if $counter == 1
+    $scanner.reset
+    $scanner.scan(0)
+  end
+  if $counter == 11
+    $scanner.scan(1)
+    p $scanner.addresses
+  end
+  if $counter == 21
+    $scanner.scan(2)
+    p $scanner.addresses
+  end
+  if $counter == 31
+    $scanner.scan(3)
+    p $scanner.addresses
+  end
+  if ($counter % 10 == 0)
+    $scanner.addresses.map { |a| format_results(a) }
+    p $dma.read_uint(0x006013e0)
+  end
 end
+

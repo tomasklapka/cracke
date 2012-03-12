@@ -25,17 +25,25 @@ class Dma
 
   def is_address_safe?(address)
     [@data, @stack, @heap].each do |range|
-	if range
-	    if range[0].kind_of?(Array)
-		range.each do |subrange|
-		    return true if is_in_range?(address, subrange)
-		end
-	    else
-		return true if is_in_range?(address, range)
-	    end
-	end
+      if range
+        if range[0].kind_of?(Array)
+          range.each do |subrange|
+            return true if is_in_range?(address, subrange)
+          end
+        else
+          return true if is_in_range?(address, range)
+        end
+      end
     end
     false
+  end
+
+  def ranges
+    ranges = []
+    ranges << @heap if @heap
+    ranges << @stack if @stack
+    @data.each { |range| ranges << range }
+    ranges
   end
 
   private
