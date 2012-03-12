@@ -3,10 +3,11 @@
 require './cracke/src/cracke.rb'
 
 cracke_options = {
-  :deploy_dir => './dummy_deploy/',
+  :enable_ruby => true,
+  :enable_lua => false,
   :name => 'dummy',
   :exec => './dummygame',
-  :incdirs => '-I/usr/include -I/usr/include/ruby-1.9.1 -I/usr/include/ruby-1.9.1/ruby/backward -I/usr/include/ruby-1.9.1/x86_64-linux -I/usr/include/ruby-1.9.1/i686-linux',
+  :incdirs => '',
   :libdirs => '',
   :libs => '-lGL',
   :hook => {
@@ -17,6 +18,7 @@ cracke_options = {
     :args => [
       ['GLbitfield', 'mask']
     ],
+    :func => '// hook function body',
   },
 }
 

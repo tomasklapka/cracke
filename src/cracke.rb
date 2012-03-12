@@ -25,8 +25,21 @@ class Cracke
   def create_hook
     o = @options
   
+    o[:hook][:include] = String.new unless o[:hook][:include]
+    o[:hook][:func] = String.new unless o[:hook][:func]
+    if o[:enable_ruby]
+      o[:hook][:func] += "\n  cracke_rb_hook();"
+      o[:hook][:include] += "\n#include \"ruby/cracke_ruby.hpp\""
+    end
+    if o[:enable_lua]
+      o[:hook][:func] += "\n  cracke_lua_hook();"
+      o[:hook][:include] += "\n#include \"lua/cracke_lua.hpp\""
+    end
+      
+  
     f = File.open("./cracke/run/#{o[:name]}_hook.cpp", "w")
     f.write(@template_hook.
+      gsub(/@HOOK@/, o[:hook][:func]).
       gsub(/@HOOK_TYPE@/, o[:hook][:type]).
       gsub(/@HOOK_INCLUDE@/, o[:hook][:include]).
       gsub(/@HOOK_NAME@/, o[:hook][:name]).
@@ -42,19 +55,42 @@ class Cracke
   def compile_hook
     o = @options
     
-    gcc_options = "-std=gnu++0x -fpermissive -fPIC -g -I/usr/local/include -I/usr/include -I./cracke/src -I./cracke/src/ruby -I./cracke/src/lua"
-
+    gcc_options = "-std=gnu++0x -fpermissive -fPIC -g -I/usr/local/include -I/usr/include -I./cracke/src"
+    commands = []
+    object_files = []
+    o[:libs] = String.new unless o[:libs]
+    o[:libs] += " -ldl"
+    
     clear_cmd = "rm -f ./cracke/run/*.o && rm -f ./cracke/run/*.so"
-    compile_ruby_cmd = "g++ #{gcc_options} #{o[:incdirs]} " +
-                  "-o ./cracke/run/cracke_ruby.o -c ./cracke/src/ruby/cracke_ruby.cpp 2>&1"
-    compile_lua_cmd = "g++ #{gcc_options} #{o[:incdirs]} " +
-                  "-o ./cracke/run/cracke_lua.o -c ./cracke/src/lua/cracke_lua.cpp 2>&1"
-    compile_libs_cmd = compile_ruby_cmd + ' && ' + compile_lua_cmd
-    compile_hook_cmd = "g++ #{gcc_options} #{o[:incdirs]} " +
-                  "-o ./cracke/run/#{o[:name]}_hook.o -c ./cracke/run/#{o[:name]}_hook.cpp 2>&1"
-    link_cmd = "g++ #{gcc_options} -shared -L/usr/local/lib -L./cracke/src/ruby -L./cracke/src/lua #{o[:incdirs]} -ldl -lruby -llua #{o[:libs]} " +
-                "-o ./cracke/run/#{o[:name]}_hook.so ./cracke/run/cracke_ruby.o ./cracke/run/cracke_lua.o ./cracke/run/#{o[:name]}_hook.o 2>&1"
-    puts %x[#{clear_cmd} && #{compile_libs_cmd} && #{compile_hook_cmd} && #{link_cmd}]
+    commands << clear_cmd
+    
+    if o[:enable_ruby]
+      o[:incdirs] += " -I./cracke/src/ruby -I/usr/include/ruby-1.9.1 -I/usr/include/ruby-1.9.1/ruby/backward -I/usr/include/ruby-1.9.1/x86_64-linux -I/usr/include/ruby-1.9.1/i686-linux"
+      compile_ruby_cmd = "g++ #{gcc_options} #{o[:incdirs]} -o ./cracke/run/cracke_ruby.o -c ./cracke/src/ruby/cracke_ruby.cpp 2>&1"
+      object_files << "./cracke/run/cracke_ruby.o"
+      commands << compile_ruby_cmd
+      o[:libs] += " -lruby"
+    end
+    
+    if o[:enable_lua]
+      o[:incdirs] += " -I./cracke/src/lua"
+      compile_lua_cmd = "g++ #{gcc_options} #{o[:incdirs]} -o ./cracke/run/cracke_lua.o -c ./cracke/src/lua/cracke_lua.cpp 2>&1"
+      object_files << "./cracke/run/cracke_lua.o"
+      commands << compile_lua_cmd 
+      o[:libs] += " -llua"
+    end
+    
+    compile_hook_cmd = "g++ #{gcc_options} #{o[:incdirs]} -o ./cracke/run/#{o[:name]}_hook.o -c ./cracke/run/#{o[:name]}_hook.cpp 2>&1"
+    object_files << "./cracke/run/#{o[:name]}_hook.o"
+    commands << compile_hook_cmd
+    
+    link_cmd = "g++ #{gcc_options} -shared -L/usr/local/lib  #{o[:incdirs]} #{o[:libs]} " +
+                "-o ./cracke/run/#{o[:name]}_hook.so #{object_files.join(" ")} 2>&1"
+    commands << link_cmd
+
+    command = commands.map { |cmd| "echo '#{cmd}' && #{cmd}" }.join(" && ")
+    
+    puts %x[#{command}]
   end
 
   def init_data
@@ -69,9 +105,6 @@ END
 
   @template_hook = <<END
 #include "cracke.hpp"
-#include "ruby/cracke_ruby.hpp"
-#include "lua/cracke_lua.hpp"
-
 @HOOK_INCLUDE@
 
 using namespace std;
@@ -82,15 +115,15 @@ void shout(const char *message)
   fputs("\\n", stderr);
   
   FILE *fp;
-  fp=fopen("cracket.log", "a");
+  fp=fopen("cracke.log", "a");
   fprintf(fp, "%s\\n", message);
   fclose(fp);
 }
 
+/* Madness */
 int cracke_hook()
 {
-  cracke_rb_hook();
-  cracke_lua_hook();
+@HOOK@
 }
 
 /* Hook function */
