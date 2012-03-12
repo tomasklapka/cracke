@@ -21,19 +21,17 @@ def main
   end
   if $counter == 11
     $scanner.scan(1)
-    p $scanner.addresses
   end
   if $counter == 21
     $scanner.scan(2)
-    p $scanner.addresses
+    puts $scanner.addresses.map { |a| format_results(a) }
   end
   if $counter == 31
     $scanner.scan(3)
-    p $scanner.addresses
+    puts $scanner.addresses.map { |a| format_results(a) }
   end
-  if ($counter % 10 == 0)
-    $scanner.addresses.map { |a| format_results(a) }
-    p $dma.read_uint(0x006013e0)
+  if ($counter > 31 and ($counter-1) % 10 == 0)
+    $scanner.addresses.map { |a| puts "Dead players: #{$dma.read_uint(a)} at #{format_results(a)} found by embedded ruby" }
   end
 end
 
