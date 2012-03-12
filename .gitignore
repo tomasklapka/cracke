@@ -1,5 +1,8 @@
+run
 tmp
 src/lib*
 *.o
 *.so
 *.log
+test/dummygame
+test/launch_cracke_dummy.sh

@@ -41,7 +41,7 @@ int cracke_rb_hook() {
     cracke_rb_start_interpret();
   }
   
-  rb_eval_string_protect("loop", &cracke_rb_status);
+  rb_eval_string_protect("loader_loop", &cracke_rb_status);
   cracke_rb_check_status();
   return 0;
 }

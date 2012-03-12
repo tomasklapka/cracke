@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 
     reset(p);
     
-    while (dead_players < 3) {
+    while (dead_players < 100) {
       counter++;
       if (counter % 50000000 == 0) {
         damage(p);

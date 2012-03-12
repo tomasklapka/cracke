@@ -1,14 +1,15 @@
 puts "loader.rb loading..."
 
 $mainfile = 'main.rb'
-$mtime = File.mtime('./cracke/src/ruby/'+$mainfile);
+$mainfile_path = './cracke/src/ruby/'+$mainfile
+$mtime = File.mtime($mainfile_path);
 puts "main.rb loading..."
 load $mainfile
 puts "main.rb loaded"
 
-def check_mainfile()
-  if File.mtime($mainfile) != $mtime
-    $mtime = File.mtime($mainfile)
+def check_mainfile
+  if File.mtime($mainfile_path) != $mtime
+    $mtime = File.mtime($mainfile_path)
     load $mainfile
   end
   return $mtime
